@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>树成林 ——AI 社群</title>
+<meta name="description" content="AI 赋能，40 天。看看这群大学生做了什么。">
+<!-- 分享卡（og/twitter）：微信外的一切分享场景（QQ/飞书/X/Discord）读这里；og.jpg 走 Vercel 根目录 -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="树成林 ——AI 社群">
+<meta property="og:description" content="AI 赋能，40 天。看看这群大学生做了什么。">
+<meta property="og:url" content="https://dengyuanxing953-eng.github.io/treelin-replica/">
+<meta property="og:image" content="https://dengyuanxing953-eng.github.io/treelin-replica/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0a0a'/%3E%3Cg fill='%23D9341C'%3E%3Crect x='8' y='18' width='4' height='7' rx='1.2'/%3E%3Crect x='14' y='12' width='4' height='13' rx='1.2'/%3E%3Crect x='20' y='6' width='4' height='19' rx='1.2'/%3E%3C/g%3E%3C/svg%3E">
+<link href="fonts/space-inter.css" rel="stylesheet">
+<!-- 仅给「大学生？/希望/但/无限/树成林」这几个英雄大字按需子集化加载真·黑体(900)，几 KB；加载失败则优雅回退系统 PingFang Semibold（L10：新增 900 用字记得扩这里） -->
+<link href="fonts/noto-sc-subset.css" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 未来感节点场（星座 · 社群连接） -->
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<!-- 胶片颗粒 + 暗角（电影质感叠层） -->
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- 顶部滚动进度（金线） -->
+<div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+<!-- 品牌水印 -->
+<div class="brand" aria-label="树成林">
+  <img class="brand__logo" src="logo.png" alt="">
+  <span class="brand__name">树成林</span>
+</div>
+
+<!-- 声音开关 -->
+<button id="sound" class="sound" aria-label="切换声音">
+  <span class="sound__eq"><i></i><i></i><i></i><i></i></span>
+  <span class="sound__hint">开启声音</span>
+</button>
+
+<main>
+
+  <!-- ══════════ 开幕 · 电影蒙太奇（6宫格入场 → 反向瀑布流加速 → 黑幕社群名）══════════ -->
+  <section class="reel" id="reel" data-mood="calm">
+    <div class="reel__stage">
+      <div class="reel__col reel__col--l">
+        <div class="reel__cell"><img src="assets/oss/works/reel/01_poster.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/04_personal.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/07_pixel.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/10_mother.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/01_poster.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/04_personal.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/07_pixel.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/10_mother.jpg" alt=""></div>
+      </div>
+      <div class="reel__col reel__col--c">
+        <div class="reel__cell"><img src="assets/oss/works/reel/02_poster2.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/05_car.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/08_novel.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/02_poster2.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/05_car.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/08_novel.jpg" alt=""></div>
+      </div>
+      <div class="reel__col reel__col--r">
+        <div class="reel__cell"><img src="assets/oss/works/reel/03_fx.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/06_game.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/11_special.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/03_fx.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/06_game.jpg" alt=""></div>
+        <div class="reel__cell"><img src="assets/oss/works/reel/11_special.jpg" alt=""></div>
+      </div>
+    </div>
+    <canvas class="reel__particles" aria-hidden="true"></canvas>
+    <div class="reel__title">
+      <p class="reel__brand">树成林</p>
+      <p class="reel__tag"><span class="reel__tag-inner">全国最大的大学生 AI 社群<i class="reel__tag-wiper" aria-hidden="true"></i></span></p>
+    </div>
+    <div class="reel__gate" aria-hidden="true">
+      <span class="reel__gate-ic">▶</span>
+      <span class="reel__gate-tx">点击进入</span>
+      <span class="reel__gate-sub">影片与声音将一同开启</span>
+    </div>
+  </section>
+
+  <!-- ══════════ 序 · 冷峻反问（#29：原「希望/是这个时代/像钻石…」已删） ══════════ -->
+  <section class="stage stage--tall" id="open" data-mood="calm">
+    <div class="copy">
+      <p class="display reveal">大学生？</p>
+      <p class="line big reveal">似乎是廉价的代名词。</p>
+    </div>
+    <div class="scrollcue reveal" aria-hidden="true"><span>向下</span><i></i></div>
+  </section>
+
+  <!-- 幕间分界 · 序→现实（冷：空心菱） -->
+  <div class="divider divider--cold" aria-hidden="true"><i></i><b></b><i></i></div>
+
+  <!-- ══════════ 绝望 ══════════ -->
+  <section class="stage stage--tall" id="void" data-mood="cold">
+    <div class="copy">
+      <p class="line big reveal">我们这群大学生什么都没有。</p>
+      <p class="line sm mut reveal"><span class="nb">没钱</span>，<span class="nb">没有资源</span>，<span class="nb">没有高认知</span>，<span class="nb">没有技术</span>。</p>
+    </div>
+  </section>
+
+  <section class="stage stage--tall" id="despair" data-mood="cold">
+    <div class="copy">
+      <p class="line sm mut reveal"><span class="nb">就业形势严峻</span>，<span class="nb">学历极速贬值</span>。</p>
+      <p class="line big mut reveal">这一代年轻人的未来，</p>
+      <p class="line big reveal">似乎看不到光芒。</p>
+    </div>
+  </section>
+
+  <!-- ══════════ 反转 · 但 ══════════ -->
+  <section class="stage stage--tall" id="but" data-mood="rise">
+    <p class="display display--but reveal-but">但</p>
+  </section>
+
+  <section class="stage stage--tall" id="turn" data-mood="rise">
+    <div class="copy">
+      <p class="line big mut reveal">一次偶然，</p>
+      <p class="line big reveal"><span class="nb">AI 开始频繁出现在这个社群。</span></p>
+    </div>
+  </section>
+
+  <section class="stage stage--tall" id="turn2" data-mood="rise">
+    <div class="copy">
+      <p class="line big reveal"><span class="nb">接下来的 <span class="num">40</span> 天</span></p>
+      <p class="line big reveal"><span class="nb">每个人每天 <span class="num">10</span> 小时</span>，<span class="nb">近乎疯狂地使用 AI</span></p>
+      <p class="line big mut reveal">这群年轻人，便造出了——</p>
+    </div>
+  </section>
+
+  <!-- 泉涌枚举 -->
+  <!-- #29b：词云改为「斜向电影胶卷流」——三条带齿孔的胶片斜铺背景，作品图若隐若现流过（film.js 填充与驱动），原 9 词挂在胶片格上 -->
+  <section class="stage stage--tall" id="surge" data-mood="rise">
+    <div class="film" aria-hidden="true"></div>
+    <div class="copy wide">
+      <p class="surge__tail">一切东西，<span class="g uline">如泉涌般出现</span>。</p>
+    </div>
+  </section>
+
+  <!-- ══════════ 成长刻度带 · 超大数字 ══════════ -->
+  <section class="stage scale" id="scale" data-mood="rise">
+    <div class="copy wide">
+      <p class="scale__cap reveal">同一个社群　·　<b>飞速生长</b></p>
+
+      <!-- 社群成长：500 →(40天极速迭代) 3000 -->
+      <div class="grow reveal">
+        <div class="grow__node">
+          <span class="grow__num"><span data-count="500">0</span><span class="grow__unit">人</span></span>
+          <span class="grow__lab">初始社群</span>
+        </div>
+        <div class="grow__mid" aria-hidden="true">
+          <span class="grow__t">40 天极速迭代</span>
+          <span class="grow__arrow">→</span>
+        </div>
+        <div class="grow__node grow__node--now">
+          <span class="grow__num"><span data-count="3000">0</span><span class="grow__unit">人</span></span>
+          <span class="grow__lab">如今</span>
+        </div>
+      </div>
+
+      <!-- 支撑数据 -->
+      <div class="scale__grid">
+        <div class="stat reveal">
+          <span class="stat__v"><span data-count="5000">0</span><span class="stat__plus">+</span></span>
+          <span class="stat__zh">个作品</span>
+          <span class="stat__en">Works</span>
+        </div>
+        <div class="stat reveal">
+          <span class="stat__v"><span data-count="9">0</span></span>
+          <span class="stat__zh">类创作</span>
+          <span class="stat__en">Formats</span>
+        </div>
+        <div class="stat reveal">
+          <span class="stat__v"><span class="stat__sym">∞</span></span>
+          <span class="stat__zh">种可能</span>
+          <span class="stat__en">Possibilities</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 幕间分界 · 叙事→作品（朱砂实心菱） -->
+  <div class="divider divider--rise" aria-hidden="true"><i></i><b></b><i></i></div>
+
+  <!-- ══════════ 作品轮 1 · 视觉 ══════════ -->
+  <section class="round" id="r1" data-mood="works">
+    <div class="stage intro chapter">
+      <span class="chapter__no" data-par aria-hidden="true">01</span>
+      <div class="copy">
+        <p class="kicker reveal"><span class="kicker__en">Chapter 01</span><span class="kicker__zh">视觉创造</span></p>
+        <p class="line big reveal">商业海报？个人写真？品牌设计？</p>
+        <p class="line big gold reveal">随便挑。</p>
+      </div>
+    </div>
+    <div class="bento" data-works="visual"></div>
+  </section>
+
+  <!-- ══════════ 作品轮 2 · 网站 ══════════ -->
+  <section class="round" id="r2" data-mood="works">
+    <div class="stage intro chapter">
+      <span class="chapter__no" data-par aria-hidden="true">02</span>
+      <div class="copy">
+        <p class="kicker reveal"><span class="kicker__en">Chapter 02</span><span class="kicker__zh">网站开发</span></p>
+        <p class="line big reveal">开发网站？</p>
+        <p class="line big gold reveal">这些都是他们从零搭建的。</p>
+      </div>
+    </div>
+    <!-- #31：剧场模式（theater.js 接管——pin 锁滚原地刷新；reduced/无 GSAP 时 main.js 回退渲染旧列表） -->
+    <div class="sites" data-works="websites" data-theater></div>
+  </section>
+
+  <!-- ══════════ #34 潮汐衔接（网站 → 小程序：整幅波带随滚动扫过视口，theater.js 驱动） ══════════ -->
+  <section class="belt" id="belt" aria-hidden="true">
+    <div class="belt__pin">
+      <div class="belt__back"></div>
+      <div class="belt__deep"></div>
+      <div class="belt__foam"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ 作品轮 3 · 小程序 / 软件 / 产品 ══════════ -->
+  <section class="round" id="r3" data-mood="works">
+    <div class="stage intro chapter">
+      <span class="chapter__no" data-par aria-hidden="true">03</span>
+      <div class="copy">
+        <p class="kicker reveal"><span class="kicker__en">Chapter 03</span><span class="kicker__zh">小程序 · 软件 · 产品</span></p>
+        <p class="line big reveal">小程序？软件？游戏？</p>
+        <p class="line big gold reveal">几天开发出来，质感却像打磨了几个月。</p>
+      </div>
+    </div>
+    <div class="products" data-works="products"></div>
+  </section>
+
+  <!-- ══════════ 作品轮 4 · AI 自动化 ══════════ -->
+  <section class="round" id="r4" data-mood="works">
+    <div class="stage intro chapter">
+      <span class="chapter__no" data-par aria-hidden="true">04</span>
+      <div class="copy">
+        <p class="kicker reveal"><span class="kicker__en">Chapter 04</span><span class="kicker__zh">AI 自动化 · 企业部署</span></p>
+        <p class="line big reveal">AI 自动化？</p>
+        <p class="line big gold reveal">他们已经在帮企业老板部署了。</p>
+      </div>
+    </div>
+    <div class="automation" data-works="automation"></div>
+  </section>
+
+  <!-- ══════════ 创作流送带 · brutalist 巨字走马灯（参考站 v2drag 基因） ══════════ -->
+  <section class="stream" id="stream" data-mood="works" aria-hidden="true">
+    <div class="stream__track">
+      <div class="stream__set">写真<i>●</i>海报<i>●</i><b>网站</b><i>●</i>小程序<i>●</i>软件<i>●</i><b>游戏</b><i>●</i>音乐<i>●</i>视频<i>●</i><b>自动化</b><i>●</i></div>
+      <div class="stream__set">写真<i>●</i>海报<i>●</i><b>网站</b><i>●</i>小程序<i>●</i>软件<i>●</i><b>游戏</b><i>●</i>音乐<i>●</i>视频<i>●</i><b>自动化</b><i>●</i></div>
+    </div>
+  </section>
+
+  <!-- 幕间分界 · 作品→希望（朱砂+光晕菱） -->
+  <div class="divider divider--hope" aria-hidden="true"><i></i><b></b><i></i></div>
+
+  <!-- ══════════ 收尾 · 诗意落点（#29：原「白昼会变长…」段与本段合并精简） ══════════ -->
+  <section class="stage stage--tall" id="ending2" data-mood="hope">
+    <div class="copy">
+      <p class="line big reveal">我们相信</p>
+      <p class="line big reveal">AI 时代</p>
+      <p class="line big reveal">年轻人</p>
+      <p class="hope">无限希望</p>
+    </div>
+  </section>
+
+  <!-- ══════════ #32 文明诞生 · 灯火版图（genesis.js 驱动） ══════════ -->
+  <section class="genesis" id="genesis" data-mood="hope" aria-label="社群灯火版图">
+    <div class="genesis__pin">
+      <canvas class="genesis__cv"></canvas>
+      <p class="genesis__cap">火种，从一个人开始。</p>
+      <p class="genesis__cap">十个人，把它传了下去。</p>
+      <p class="genesis__cap">一百个，五百个，互相照亮。</p>
+      <p class="genesis__cap">直到灯火，<span class="g">落满整片土地</span>。</p>
+      <div class="genesis__brand" aria-hidden="true">
+        <p class="genesis__brand-name">树成林</p>
+        <i class="genesis__brand-line"></i>
+        <p class="genesis__brand-slogan">全国最大的大学生 AI 社群</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ CTA ══════════ -->
+  <footer class="cta" id="cta" data-mood="hope">
+    <ul class="cta__list">
+      <li class="reveal">
+        <a class="cta__row"><span>想和我们合作</span><i>→</i></a>
+        <div class="cta__panel"><div class="cta__panel-in">
+          <img class="cta__qr" src="cta/coop.png" alt="微信扫码添加果粒" loading="lazy">
+          <p class="cta__sub">微信扫一扫 · 添加果粒，聊聊合作</p>
+        </div></div>
+      </li>
+      <li class="reveal">
+        <a class="cta__row"><span>想加入我们</span><i>→</i></a>
+        <div class="cta__panel"><div class="cta__panel-in">
+          <img class="cta__qr" src="cta/join.png" alt="微信扫码加入我们" loading="lazy">
+          <p class="cta__sub">微信扫一扫 · 加入我们</p>
+        </div></div>
+      </li>
+      <li class="reveal">
+        <a class="cta__row"><span>关注我们</span><i>→</i></a>
+        <div class="cta__panel"><div class="cta__panel-in">
+          <p class="cta__wechat">公众号：<b id="mpName">树成林light</b></p>
+          <p class="cta__sub" data-tip="已复制，去微信粘贴搜索">微信公众号搜索 · 点击复制</p>
+        </div></div>
+      </li>
+      <li class="reveal">
+        <a class="cta__row"><span>把火种传下去</span><i>→</i></a>
+        <div class="cta__panel"><div class="cta__panel-in">
+          <p class="cta__wechat"><b id="shareLink">dengyuanxing953-eng.github.io/treelin-replica</b></p>
+          <p class="cta__sub" data-tip="链接已复制，发给下一个人">点击复制链接 · 微信内可直接转发本页</p>
+        </div></div>
+      </li>
+    </ul>
+    <p class="cta__mark reveal">树成林：全国最大的大学生 AI 社群</p>
+  </footer>
+
+</main>
+
+<!-- BGM -->
+<audio id="bgm" src="assets/oss/audio/bgm.mp3" loop preload="auto"></audio>
+
+<!-- 本地化依赖（无需联网） -->
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/ScrollTrigger.min.js"></script>
+<script src="vendor/lenis.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/main.js"></script>
+<script src="js/reel.js"></script>
+<script src="js/finale.js"></script>
+<script src="js/film.js"></script>
+<script src="js/theater.js"></script>
+<script src="js/cnmap.js"></script>
+<script src="js/genesis.js"></script>
+<script src="js/cursor.js"></script>
+</body>
+</html>

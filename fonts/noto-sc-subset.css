@@ -1,0 +1,8 @@
+﻿@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("noto-sc-subset.woff2") format('woff2');
+  unicode-range: U+4e50, U+4ef6, U+4f46, U+5199, U+52a8, U+5316, U+5927, U+5b66, U+5c0f, U+5e0c, U+5e8f, U+620f-6210, U+62a5, U+65e0, U+671b, U+6797, U+6811, U+6d77, U+6e38, U+751f, U+771f, U+7a0b, U+7ad9, U+7f51, U+81ea, U+89c6, U+8f6f, U+9650, U+97f3, U+9891, U+ff1f;
+}

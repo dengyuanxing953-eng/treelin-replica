@@ -1,0 +1,1102 @@
+/* ============================================================
+   《希望》 —— 可滚动的视觉短片
+   视觉基调：纯黑 · 大留白叙事 · 密集作品轰炸 · 金色点睛
+   ============================================================ */
+
+:root{
+  --bg:#0A0A0A;
+  --ink:#FFFFFF;
+  --ink-2:#c2c2c2;                    /* 次级正文/叙事：中性亮灰（v13 全站去暖统一——原暖砂米 #d8cdb8 与黑红体系打架；参考站证明中性灰+字重落差在纯黑上完全成立。亮度保持足够高避免"褪色白"感） */
+  --mut:#8c8c8c;                      /* 微标签 / eyebrow：中性灰（原 #7e7a73 暖灰已去暖） */
+  --dim:#222;
+  --line:#1a1a1a;
+  --ac:#D9341C;                       /* 强调色 = 朱砂/朱红（取自参考站封面 https://dazzling-brahmagupta-1829ef.vercel.app 的标题色）：
+                                         暖·略带橙的「墨/朱砂红」，muted 不刺眼 = premium ink 红，比纯亮红耐看、不疲劳。
+                                         单色方案（不另配搭配色，小标题/eyebrow 走中性暖灰 --mut）。改这一处全站变色。
+                                         配色史：金黄→青绿→暖珊瑚#FF5436(橙)→赤焰红#F5333B(亮·易疲劳)→暖金#FFB23E(嫌廉价)→朱砂红#D9341C·单色(定·v10)。*/
+  --ac-dim:rgba(217,52,28,.15);
+  --ac-glow:rgba(217,52,28,.32);
+  --ac-2:#D9341C;                     /* 单色方案下点睛色=同主色（保留 token 以便将来想再分「力量色」时只改这一处）*/
+  --sans:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;          /* 正文/叙事：系统中文(快·稳) */
+  --disp:"Space Grotesk","Inter",var(--sans);                           /* 数字/英文标签：几何 grotesk，有性格 */
+  --disp-cjk:"Noto Sans SC",var(--sans);                                /* 英雄大字 CJK：真·黑体900(按需子集)，比系统 Semibold 更有力量；失败回退 PingFang */
+  --ease:cubic-bezier(.22,1,.36,1);
+  --pad:clamp(20px,5vw,80px);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{ -webkit-text-size-adjust:100%; }
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:400;
+  line-height:1.5;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--ac); color:#000; }
+img,video{ display:block; max-width:100%; }
+a{ color:inherit; text-decoration:none; }
+button{ font-family:inherit; color:inherit; background:none; border:none; cursor:pointer; }
+
+/* ---- Lenis 平滑滚动所需 ---- */
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+.lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
+.lenis.lenis-stopped{overflow:hidden}
+.lenis.lenis-scrolling iframe{pointer-events:none}
+
+/* ============================================================
+   未来感节点场（星座 · 社群连接）—— 背景层
+   ============================================================ */
+#fx{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  display:block;
+}
+/* 内容压在节点场之上（节点场 z:0，内容 z:1，叠层 z:8999+） */
+main, .cta{ position:relative; z-index:1; }
+
+/* ============================================================
+   电影质感叠层：颗粒 + 暗角 + 进度
+   ============================================================ */
+/* 静态胶片颗粒：无动画 · 无混合模式 · 仅一层贴图，零每帧开销 */
+.grain{
+  position:fixed; inset:0; z-index:9000; pointer-events:none;
+  opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px;
+}
+.vignette{
+  position:fixed; inset:0; z-index:8999; pointer-events:none;
+  background:radial-gradient(120% 120% at 50% 45%,transparent 55%,rgba(0,0,0,.55) 100%);
+}
+.progress{
+  position:fixed; top:0; left:0; right:0; height:2px; z-index:9100;
+  background:rgba(255,255,255,.05);
+}
+.progress span{
+  display:block; height:100%; width:0;
+  background:linear-gradient(90deg,var(--ac),#ef6a4c);
+  box-shadow:0 0 12px var(--ac-glow);
+}
+
+/* ---- 品牌水印：白色 logo（圆+地平线+三棵松＝树成林）+ 字号 锁定式 lockup ---- */
+.brand{
+  position:fixed; top:clamp(16px,3vw,30px); left:clamp(16px,3vw,30px); z-index:9100;
+  display:flex; align-items:center; gap:.5em;
+  pointer-events:none; mix-blend-mode:difference;   /* 差值混合：白 logo/字在任意背景(暗场/亮光流)上都可见 */
+}
+.brand__logo{ width:clamp(20px,2.3vw,28px); height:auto; display:block; }
+.brand__name{ font-family:var(--disp); font-size:12px; letter-spacing:.2em; color:#d4d4d4; font-weight:600; }
+/* #23 开幕期间 lockup 隐身（reel.js 接管其生命周期：蒙太奇收尾/页中刷新/降级时加 .brand--on 现身） */
+.js .brand{ opacity:0; transform:translateY(-8px); transition:opacity 1.1s var(--ease), transform 1.1s var(--ease); }
+.js .brand.brand--on{ opacity:1; transform:none; }
+
+/* ---- 声音开关 ---- */
+.sound{
+  position:fixed; bottom:clamp(16px,3vw,30px); right:clamp(16px,3vw,30px); z-index:9100;
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px 9px 12px; border-radius:100px;
+  background:rgba(20,20,20,.6); backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.1);
+  transition:border-color .4s var(--ease), background .4s;
+}
+.sound:hover{ border-color:var(--ac); }
+.sound__eq{ display:flex; align-items:flex-end; gap:2px; height:14px; }
+.sound__eq i{ width:2.5px; height:100%; background:var(--ac); border-radius:2px; transform-origin:bottom; transform:scaleY(.25); }
+.sound.playing .sound__eq i{ animation:eq .9s ease-in-out infinite; }
+.sound.playing .sound__eq i:nth-child(2){ animation-delay:.2s }
+.sound.playing .sound__eq i:nth-child(3){ animation-delay:.4s }
+.sound.playing .sound__eq i:nth-child(4){ animation-delay:.15s }
+@keyframes eq{ 0%,100%{transform:scaleY(.25)} 50%{transform:scaleY(1)} }
+.sound__hint{ font-family:var(--disp); font-size:11px; letter-spacing:.1em; color:var(--mut); white-space:nowrap; }
+.sound.playing .sound__hint{ display:none; }
+.sound.blocked{ border-color:var(--ac); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse{ 0%,100%{box-shadow:0 0 0 0 var(--ac-glow)} 50%{box-shadow:0 0 0 8px transparent} }
+
+/* ============================================================
+   取景器光标（cursor.js · 仅 pointer:fine 启用）
+   语义：滚动短片 → 光标=摄影机取景系统。
+   白点反色即时跟手 + 朱砂环滞后；hover 作品=四角对焦锁定。
+   旋钮：环径/角标尺寸在 cursor.js 顶部同步。
+   ============================================================ */
+.has-cur, .has-cur *{ cursor:none !important; }
+
+.cur{ opacity:0; transition:opacity .35s ease; }
+.cur.on{ opacity:1; }
+.cur__dot, .cur__ring, .cur__frame{
+  position:fixed; top:0; left:0; pointer-events:none; z-index:9600;
+  will-change:transform;
+}
+/* 点：5px 反色白点（走过白字自动变黑） */
+.cur__dot i{
+  position:absolute; top:-2.5px; left:-2.5px; width:5px; height:5px;
+  border-radius:50%; background:#fff; display:block;
+  transition:transform .25s var(--ease);
+}
+.cur__dot{ mix-blend-mode:difference; }
+.cur--press .cur__dot i{ transform:scale(2.1); }
+
+/* 环：34px 朱砂细环（视觉在内层 i，外层只接 JS 位移/挤压） */
+.cur__ring i{
+  position:absolute; top:-17px; left:-17px; width:34px; height:34px;
+  border:1.5px solid var(--ac); border-radius:50%; display:block; opacity:.8;
+  transition:transform .3s var(--ease), opacity .3s;
+}
+.cur--press .cur__ring i{ transform:scale(.82); }
+.cur--link  .cur__ring i{ transform:scale(1.55); opacity:1; }
+.cur--focus .cur__ring i{ transform:scale(.4); opacity:0; }
+
+/* 链接提示（外链 ↗）：居环中心 */
+.cur__tip{
+  position:absolute; top:0; left:0; transform:translate(-50%,-50%);
+  font-family:var(--disp); font-size:11px; letter-spacing:.04em;
+  color:var(--ac); opacity:0; transition:opacity .25s;
+}
+.cur--link .cur__tip{ opacity:1; }
+
+/* 对焦框：四个 L 角标（14px，与 cursor.js CORNER 同步） */
+.cur__frame{ opacity:0; transition:opacity .22s ease; }
+.cur--focus .cur__frame{ opacity:1; }
+.cur__frame b{ position:absolute; width:14px; height:14px; border:0 solid var(--ac); }
+.cur__frame b:nth-child(1){ top:0; left:0;  border-top-width:2px; border-left-width:2px; }
+.cur__frame b:nth-child(2){ top:0; right:0; border-top-width:2px; border-right-width:2px; }
+.cur__frame b:nth-child(3){ bottom:0; right:0; border-bottom-width:2px; border-right-width:2px; }
+.cur__frame b:nth-child(4){ bottom:0; left:0;  border-bottom-width:2px; border-left-width:2px; }
+
+/* 点击门阶段：环声呐脉冲（邀请点击）；动画走 ::after 不碰 JS transform */
+.cur-gate .cur__ring i::after{
+  content:""; position:absolute; inset:-1.5px; border-radius:50%;
+  border:1.5px solid var(--ac); animation:curSonar 1.8s ease-out infinite;
+}
+@keyframes curSonar{
+  0%{ transform:scale(1); opacity:.8; }
+  100%{ transform:scale(2.2); opacity:0; }
+}
+
+/* 蒙太奇播放中：环隐身只留反色点（T22 开幕只有一个主角） */
+.cur-reel .cur__ring{ opacity:0; transition:opacity .4s; }
+
+/* ============================================================
+   开幕 · 电影蒙太奇（6宫格入场 → 反向瀑布流加速 → 黑幕社群名）
+   ============================================================ */
+.reel{ position:relative; height:100vh; overflow:hidden; background:var(--bg); }
+.reel__stage{
+  position:absolute; inset:0; display:flex;
+  gap:clamp(8px,1.1vw,16px); padding:clamp(8px,1.1vw,16px);
+  will-change:opacity;
+}
+.reel__col{
+  flex:1; display:flex; flex-direction:column;
+  gap:clamp(8px,1.1vw,16px); will-change:transform;
+}
+.reel__cell{
+  position:relative; flex:0 0 auto; height:46vh;
+  border-radius:10px; overflow:hidden;
+  background:#111; border:1px solid var(--line);
+  box-shadow:0 22px 55px rgba(0,0,0,.55);
+}
+.reel__cell::after{   /* 轻微暗角，统一电影质感 */
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(120% 120% at 50% 40%,transparent 60%,rgba(0,0,0,.45));
+}
+.reel__cell img{ width:100%; height:100%; object-fit:cover; filter:grayscale(1); }  /* 开幕一开始就黑白：杜绝"彩色→变白"的闪烁 */
+
+.reel__particles{ position:absolute; inset:0; z-index:2; pointer-events:none; }
+.reel__skip{
+  position:absolute; left:50%; transform:translateX(-50%); bottom:clamp(20px,4vh,40px); z-index:6;
+  font-family:var(--disp); font-size:11px; letter-spacing:.18em; color:var(--mut);
+  padding:9px 20px; border:1px solid rgba(255,255,255,.14); border-radius:100px;
+  background:rgba(20,20,20,.5); backdrop-filter:blur(8px); transition:.35s var(--ease);
+}
+.reel__skip:hover{ color:var(--ac); border-color:var(--ac); }
+.reel__title{
+  position:absolute; inset:0; z-index:3; pointer-events:none;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  text-align:center; padding:0 var(--pad);
+}
+.reel__brand{
+  font-family:var(--disp-cjk); font-weight:900; line-height:1;
+  font-size:min(20.5vw,40vh); letter-spacing:.06em; color:var(--ink);  /* 与 reel.js 粒子字同尺寸同字重(真·黑体900)；仅降级路径可见 */
+}
+.reel__tag{
+  margin-top:.7em; font-weight:500; line-height:1.3;
+  font-size:clamp(1rem,3.1vw,2.1rem); letter-spacing:.14em; color:var(--ac);
+  display:flex; align-items:center; justify-content:center; gap:clamp(.7em,2vw,1.4em);
+}
+/* 小标语「特殊装饰」：两侧朱砂渐隐细线（印刷完成后随电流一起亮起） */
+.reel__tag::before, .reel__tag::after{
+  content:""; flex:0 0 auto; height:1px; width:clamp(22px,5vw,64px);
+  background:linear-gradient(90deg, transparent, var(--ac));
+  opacity:0; transition:opacity .7s var(--ease);
+}
+.reel__tag::after{ background:linear-gradient(90deg, var(--ac), transparent); }
+.reel__tag.lines-on::before, .reel__tag.lines-on::after{ opacity:1; }
+/* 「印刷擦除」：发光长条(印刷头)从左到右扫过，clip-path 跟随把字"擦出来" */
+.reel__tag-inner{ position:relative; display:inline-block; }
+.reel__tag-wiper{
+  position:absolute; top:50%; left:0; width:.16em; height:1.55em;
+  transform:translate(-50%,-50%); border-radius:1em; pointer-events:none; opacity:0;
+  background:linear-gradient(180deg,#fff,var(--ac));
+  box-shadow:0 0 14px var(--ac-glow), 0 0 34px var(--ac-glow);
+}
+/* 小标语「触电」登场：电流脉冲闪烁 + 瞬时色散(红/青分离) + 电光辉光，最后落定干净 */
+.reel__tag--electric{ animation:tagElectric 1.15s linear forwards; will-change:opacity,transform,text-shadow; }
+@keyframes tagElectric{
+  0%   { opacity:1; transform:none; text-shadow:none; }   /* 入场已由「印刷擦除」完成，电流只做脉冲 */
+  6%   { opacity:1; text-shadow:0 0 16px rgba(120,200,255,.9), 0 0 4px #fff; }
+  9%   { opacity:.22; }
+  13%  { opacity:1; text-shadow:2px 0 0 rgba(217,52,28,.9), -2px 0 0 rgba(90,200,255,.9), 0 0 22px rgba(120,200,255,.85); }
+  17%  { opacity:.5; transform:translateX(-1.5px); }
+  21%  { opacity:1; transform:translateX(1.5px); text-shadow:0 0 18px rgba(120,200,255,.7), 0 0 5px #fff; }
+  26%  { opacity:.72; transform:translateX(0); }
+  32%  { opacity:1; text-shadow:1px 0 0 rgba(217,52,28,.6), -1px 0 0 rgba(90,200,255,.6), 0 0 12px rgba(120,200,255,.5); }
+  55%  { text-shadow:0 0 6px rgba(120,200,255,.3); }
+  100% { opacity:1; transform:none; text-shadow:none; }
+}
+@media (prefers-reduced-motion:reduce){ .reel__tag--electric{ animation:none; opacity:1; } }
+/* 首次点击进入：黑白作品墙上的引导（点击穿透到 window 监听） */
+.reel__gate{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:7;
+  display:flex; flex-direction:column; align-items:center; gap:.85em;
+  pointer-events:none; text-align:center;
+}
+.reel__gate-ic{
+  width:66px; height:66px; border-radius:50%; padding-left:3px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid rgba(217,52,28,.5); color:var(--ink); font-size:17px;
+  background:rgba(18,18,18,.42); backdrop-filter:blur(8px);
+  animation:gatePulse 2.4s var(--ease) infinite;
+}
+.reel__gate-tx{ font-family:var(--sans); font-weight:600; font-size:clamp(1.1rem,2.5vw,1.55rem); letter-spacing:.16em; color:var(--ink); }
+.reel__gate-sub{ font-family:var(--disp); font-size:11px; letter-spacing:.22em; color:var(--mut); }
+@keyframes gatePulse{
+  0%,100%{ box-shadow:0 0 0 0 var(--ac-glow); border-color:rgba(217,52,28,.55); }
+  50%{ box-shadow:0 0 0 15px transparent; border-color:rgba(255,255,255,.2); }
+}
+@media (max-width:880px){
+  .reel__cell{ height:38vh; }
+}
+
+/* ============================================================
+   叙事舞台
+   ============================================================ */
+.stage{
+  min-height:100vh; display:grid; place-items:center;
+  padding:14vh var(--pad); text-align:center; position:relative;
+}
+.stage--tall{ min-height:130vh; }
+.copy{ max-width:1000px; }
+.copy.wide{ max-width:1200px; }
+
+.line{
+  font-weight:500; letter-spacing:.01em;
+  font-size:clamp(1.9rem,5.2vw,4.2rem); line-height:1.42;
+  margin:.28em 0; text-wrap:balance;
+}
+.line.mut{ color:var(--ink-2); font-weight:300; letter-spacing:.03em; }   /* 次级叙事：主行 500 实白 ↔ 次行 300 暖砂米，层级靠「字重 2 档落差 + 暖色相 + 微字距留白」，不靠压暗 */
+.line.sm{
+  font-weight:400; line-height:1.65; letter-spacing:.02em;
+  font-size:clamp(1.2rem,3vw,2rem);
+  max-width:30ch; margin-left:auto; margin-right:auto;
+}
+.copy.wide .line.sm{ max-width:42ch; }
+.nb{ white-space:nowrap; }       /* 短语整体不拆，只在标点处换行 */
+.gold{ color:var(--ac); }
+.quote{ color:var(--ink-2); font-weight:300; letter-spacing:.03em; }
+.num{ font-family:var(--disp); color:var(--ac); font-weight:700; }
+
+/* 大字「但」「希望」与标题：纯色实心 · 高级有力量（去掉廉价渐变） */
+.display,.display--but,.hope,.filmtitle__name{
+  color:var(--ac);
+  -webkit-text-fill-color:var(--ac);
+  background:none;
+}
+.display{
+  font-family:var(--disp-cjk); font-weight:900; line-height:1;
+  font-size:clamp(4.4rem,15vw,11rem); letter-spacing:.02em;   /* 真黑体更重，字距收紧→更雕塑感 */
+}
+.display--but{
+  font-family:var(--disp-cjk); font-weight:900; line-height:.92;
+  font-size:clamp(8rem,25vw,19rem); letter-spacing:.01em;
+  color:var(--ac-2); -webkit-text-fill-color:var(--ac-2);   /* 赤焰红点睛：全站唯一的巨字红，力量/反转 */
+}
+.hope{
+  font-family:var(--disp-cjk); font-weight:900; letter-spacing:.02em; line-height:1;
+  font-size:clamp(3.2rem,12vw,8.5rem); margin-top:.18em;
+}
+
+/* 标题卡《希望》 */
+.filmtitle{ font-family:var(--disp-cjk); font-size:clamp(3rem,9vw,6.4rem); font-weight:900; letter-spacing:.05em; line-height:1; }
+.filmtitle .brk{ color:var(--mut); font-weight:300; -webkit-text-fill-color:var(--mut); }
+.subtitle{ margin-top:2em; font-family:var(--disp); font-size:clamp(.72rem,1.5vw,.95rem); letter-spacing:.3em; color:var(--mut); }
+
+/* 序·希望：分段呼吸感，给文字更多空间（配合 main.js 的分段慢揭示） */
+#open .copy{ display:flex; flex-direction:column; align-items:center; gap:clamp(1.1rem,3.6vh,2.8rem); }
+#open .display{ margin:0; }
+#open .line{ margin:0; }
+#open .line.big{ font-size:clamp(1.6rem,4.2vw,3.2rem); }   /* 略收次级行，让巨大「希望」当绝对主角 */
+
+/* ============================================================
+   泉涌 · 斜向电影胶卷流（#29b，film.js 构建）
+   三条带齿孔的胶片 -9° 斜铺背景反向流动；尾句升格为主句叠其上。
+   旋钮：倾角/速差在 film.js STRIPS；图片明暗在 .film__frame img filter；
+        帧宽 .film__frame width；条间距 .film__tilt gap。
+   ============================================================ */
+#surge{ overflow:hidden; position:relative; }
+#surge .copy{ position:relative; z-index:1; }
+.film{
+  position:absolute; inset:-14% -12%; z-index:0; pointer-events:none;
+  /* 上下垂直淡出（融入前后段落的黑） */
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 22%,#000 78%,transparent);
+          mask-image:linear-gradient(180deg,transparent,#000 22%,#000 78%,transparent);
+}
+.film__tilt{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  justify-content:center; gap:clamp(18px,3.4vh,40px);
+  transform:rotate(-9deg) scale(1.12);
+}
+.film__strip{
+  /* 左右水平淡出＝若隐若现 */
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);
+}
+.film__belt{ display:flex; width:max-content; will-change:transform; }
+.film__set{ display:flex; }
+.film__frame{
+  position:relative; flex:none; margin:0 clamp(6px,.7vw,10px) 0 0;
+  width:min(clamp(180px,21vw,300px), 34vh);
+  padding:13px 9px; background:#0b0b0b;
+  border:1px solid rgba(255,255,255,.07); border-radius:3px;
+}
+/* 胶片齿孔带（上下两排亮孔） */
+.film__frame::before,.film__frame::after{
+  content:""; position:absolute; left:9px; right:9px; height:5px; border-radius:1px;
+  background:repeating-linear-gradient(90deg, rgba(255,255,255,.16) 0 6px, transparent 6px 16px);
+}
+.film__frame::before{ top:4px; }
+.film__frame::after{ bottom:4px; }
+.film__frame img{
+  width:100%; aspect-ratio:16/9; object-fit:cover; display:block;
+  filter:grayscale(.45) brightness(.58) contrast(1.05);
+}
+.film__frame figcaption{
+  position:absolute; left:12px; bottom:16px;
+  font-family:var(--disp); font-size:10px; letter-spacing:.18em;
+  color:rgba(255,255,255,.78); background:rgba(0,0,0,.55);
+  padding:2px 7px; border-left:2px solid var(--ac);
+}
+/* 尾句升格主句（词云已撤，丰富度交给胶卷流）；text-shadow 把字从胶片上拎出来 */
+.surge__tail{ font-size:clamp(1.5rem,3.4vw,2.4rem); font-weight:600; color:var(--ink); letter-spacing:.05em;
+  text-shadow:0 2px 18px rgba(0,0,0,.9), 0 0 46px rgba(0,0,0,.7); }
+.surge__tail .g{ color:var(--ac); }
+.kicker{
+  font-family:var(--disp); font-size:13px; letter-spacing:.32em;
+  color:var(--ac); text-transform:uppercase; margin-bottom:2.4em;
+}
+
+/* 滚动提示 */
+.scrollcue{
+  position:absolute; bottom:7vh; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  font-family:var(--disp); font-size:11px; letter-spacing:.25em; color:var(--mut);
+}
+.scrollcue i{ width:1px; height:40px; background:linear-gradient(var(--mut),transparent); animation:cue 2s var(--ease) infinite; }
+@keyframes cue{ 0%{transform:scaleY(0);transform-origin:top} 40%{transform:scaleY(1);transform-origin:top} 60%{transform:scaleY(1);transform-origin:bottom} 100%{transform:scaleY(0);transform-origin:bottom} }
+
+/* ============================================================
+   作品轮 通用
+   ============================================================ */
+.round{ position:relative; }
+.round .intro{ min-height:90vh; }
+/* ---- 作品轮分层（#过渡感）：奇数轮底色微抬升、长渐变交界 → 跨轮时背景深浅变化=进入新内容的进度反馈。
+   半透明白叠加（不盖死 fx 星座场）。旋钮：亮度 .04（更明显→.055，更克制→.025）；交界长度 18vh。 ---- */
+#r1, #r3{
+  background:linear-gradient(180deg,
+    rgba(255,255,255,0) 0,
+    rgba(255,255,255,.04) clamp(140px,18vh,300px),
+    rgba(255,255,255,.04) calc(100% - clamp(140px,18vh,300px)),
+    rgba(255,255,255,0) 100%);
+}
+
+/* ---- 占位图 ---- */
+.ph{
+  position:relative; width:100%; height:100%; min-height:inherit;
+  display:grid; place-items:center; overflow:hidden;
+  background:
+    radial-gradient(80% 120% at 30% 0%, rgba(217,52,28,.06), transparent 60%),
+    linear-gradient(145deg,#161616,#0e0e0e);
+  border:1px solid var(--line);
+}
+.ph__num{
+  position:absolute; top:-.18em; right:.12em;
+  font-family:var(--disp); font-weight:700; font-size:9rem;
+  color:rgba(255,255,255,.03); line-height:1; pointer-events:none;
+}
+.ph__label{ position:relative; color:var(--mut); font-size:.92rem; letter-spacing:.08em; padding:0 1em; text-align:center; }
+.ph__dot{ width:7px;height:7px;border-radius:50%;background:var(--ac);margin:0 auto 12px;opacity:.7;box-shadow:0 0 14px var(--ac-glow); }
+
+/* ============================================================
+   轮1 视觉 —— 多列瀑布流（任意数量都不空）
+   ============================================================ */
+.bento{
+  /* 2 列并排：视觉轮两张作品一行同框（v14 按用户要求恢复并排） */
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start; gap:clamp(18px,2.4vw,36px);
+  padding:0 var(--pad) 18vh;
+  max-width:1500px; margin:0 auto;
+}
+.bento .tile{ margin:0; }
+.bento .tile img,.bento .tile video{ width:100%; height:auto; object-fit:cover; display:block; }
+/* #43 压轴大图：独占整行放大展示（data.js span:"full"） */
+.bento .tile--full{ grid-column:1 / -1; }
+
+/* 通用作品瓦片 */
+.tile{
+  position:relative; border-radius:14px; overflow:hidden;
+  background:#0e0e0e; border:1px solid var(--line);
+  box-shadow:0 18px 50px rgba(0,0,0,.5);
+}
+.tile img,.tile video{ width:100%; height:auto; object-fit:cover; }
+.tile .ph{ aspect-ratio:4/3; }
+.tile .cap{
+  position:absolute; left:0; right:0; bottom:0; padding:26px 18px 16px;
+  background:linear-gradient(transparent,rgba(0,0,0,.85));
+  opacity:0; transform:translateY(8px); transition:.45s var(--ease);
+}
+.tile:hover .cap{ opacity:1; transform:none; }
+.tile .cap b{ display:block; font-weight:600; font-size:1rem; }
+.tile .cap span{ font-size:.82rem; color:var(--mut); }
+/* #44 入场亮相态：波浪显影同拍亮出说明卡，几秒后撤掉类回到 hover 模式 */
+.tile .cap.cap--show{ opacity:1; transform:none; }
+/* 触屏没有 hover：说明卡常驻（否则触屏用户永远看不到作品名） */
+@media (hover:none){ .tile .cap{ opacity:1; transform:none; } }
+
+/* #44 标题印刷划线：随擦除走过、到位后隐去 */
+.wline{
+  display:block; height:2px; margin-top:.34em;
+  background:var(--ac); box-shadow:0 0 10px var(--ac-glow);
+  transform-origin:0 50%;
+}
+
+/* ============================================================
+   轮2 网站 —— 浏览器框，左右交替
+   ============================================================ */
+.sites{
+  display:flex; flex-direction:column; gap:clamp(90px,18vh,240px);   /* v15：拉开网页作品间距，每屏只聚焦一个 */
+  max-width:1360px; margin:0 auto; padding:0 var(--pad) 18vh;
+}
+.site{ display:grid; grid-template-columns:1.55fr 1fr; gap:clamp(28px,5vw,70px); align-items:center; }
+.site:nth-child(even){ grid-template-columns:1fr 1.55fr; }
+.site:nth-child(even) .browser{ order:2; }
+.site:nth-child(even) .site__txt{ order:1; }
+
+.browser{
+  border-radius:14px; overflow:hidden; background:#111;
+  border:1px solid #262626; box-shadow:0 40px 90px rgba(0,0,0,.6);
+}
+.browser__bar{
+  display:flex; align-items:center; gap:8px; padding:11px 14px;
+  background:#1a1a1a; border-bottom:1px solid #262626;
+}
+.browser__bar i{ width:11px; height:11px; border-radius:50%; background:#333; }
+.browser__bar i:nth-child(1){background:#ff5f57}
+.browser__bar i:nth-child(2){background:#febc2e}
+.browser__bar i:nth-child(3){background:#28c840}
+.browser__url{
+  flex:1; margin-left:8px; height:22px; border-radius:6px; background:#0c0c0c;
+  display:flex; align-items:center; padding:0 12px;
+  font-family:var(--disp); font-size:11px; color:#555; letter-spacing:.04em;
+  overflow:hidden; white-space:nowrap;
+}
+.browser__view{ position:relative; aspect-ratio:16/9; background:#000; overflow:hidden; }
+.browser__view img,.browser__view video{ width:100%; height:100%; object-fit:cover; }
+.browser__view iframe{ position:absolute; top:0; left:0; width:200%; height:200%; transform:scale(.5); transform-origin:0 0; border:0; }
+/* ============================================================
+   #31 · 网站篇章剧场（theater.js）
+   pin 锁滚原地换幕：刷新波盖场 → 暗场打字机大字 → 飞向左上场记牌
+   → 揭开新作品。三种刷新波轮换（马赛克/瀑布帘/激光扫描）。
+   旋钮：节拍/网格/步进在 theater.js 顶部；此处只管视觉。
+   ============================================================ */
+.sites.theater{ display:block; gap:0; padding:0; max-width:none; }
+.theater__stage{
+  position:relative; height:100vh; overflow:hidden;
+}
+.theater__viewer{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(900px, 84vw, 138vh); z-index:1;
+}
+.theater__view{ background:#000; }
+.theater__media{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* 打字机大字层（暗场主角） */
+.theater__type{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  z-index:3; text-align:center; width:min(860px,90vw); opacity:0;
+  will-change:transform,filter;
+}
+.theater__type-kick{
+  font-family:var(--disp); font-size:12px; letter-spacing:.3em;
+  color:var(--ac); margin-bottom:1.1em;
+}
+.theater__type-name{
+  font-size:clamp(2.1rem,5.4vw,4rem); font-weight:700; line-height:1.16;
+  letter-spacing:.04em; color:var(--ink);
+}
+.theater__type-sub{
+  margin-top:1em; font-size:clamp(.95rem,1.8vw,1.2rem);
+  color:var(--ink-2); letter-spacing:.08em;
+}
+.theater__typebar{
+  display:inline-block; width:.5em; height:1.02em; margin-left:.08em;
+  background:var(--ac); vertical-align:-.12em;
+  animation:thBlink .8s steps(1) infinite;
+}
+@keyframes thBlink{ 50%{opacity:0} }
+
+/* 场记牌（大字落点 · 左上） */
+.theater__slate{
+  /* #46b 挂在浏览器框左上角外侧：bottom:100% 锚住框上缘，跟框走永不重叠 */
+  position:absolute; left:2px; bottom:calc(100% + 14px);
+  z-index:3; display:flex; align-items:baseline; gap:12px; white-space:nowrap;
+  padding-left:12px; border-left:3px solid var(--ac);
+  opacity:0; transform:translateY(6px);
+  transition:opacity .35s var(--ease), transform .35s var(--ease);
+}
+.theater__slate.on{ opacity:1; transform:none; }
+.theater__slate-no{ font-family:var(--disp); font-size:12px; letter-spacing:.2em; color:var(--ac); }
+.theater__slate-name{ font-size:clamp(1rem,1.7vw,1.25rem); font-weight:600; color:var(--ink); }
+
+/* 刷新波 overlay（盖在 viewer 上、文字下） */
+.theater__wave{ position:absolute; inset:0; z-index:2; pointer-events:none; }
+.theater__wave .wv{ position:absolute; inset:0; display:none; }
+/* a. 倾斜马赛克：对角扩散瓦阵 */
+.wv--mosaic{ grid-template-rows:repeat(9,1fr); grid-template-columns:repeat(16,1fr); }
+.wv--mosaic b{ background:#0d0d0d; will-change:transform; }
+.wv--mosaic b.ac{ background:var(--ac); opacity:.88; }
+/* #45 开演前幕布态：朱砂瓦退成隐约暗纹（静止状态大色块=廉价），开演时渐变回满血 */
+.wv--mosaic b.ac{ transition:background .8s ease; }
+.wv--mosaic.curtain b.ac{ background:rgba(217,52,28,.14); opacity:1; }
+/* b. 瀑布帘：竖条自上而下 */
+.wv--falls{ flex-direction:row; }
+.wv--falls b{ flex:1; position:relative; background:#0d0d0d; will-change:transform; }
+.wv--falls b::after{
+  content:""; position:absolute; left:0; right:0; bottom:-5px; height:5px;
+  background:linear-gradient(180deg, var(--ac-glow), transparent);
+}
+/* c. 百叶翻转：横向板条交替合拢（#35 新增） */
+.wv--blinds{ flex-direction:column; }
+.wv--blinds b{ flex:1; position:relative; background:#0d0d0d; will-change:transform; }
+.wv--blinds b::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:1px;
+  background:linear-gradient(90deg, transparent 8%, var(--ac-glow), transparent 92%);
+  opacity:.55;
+}
+/* d/e. 海浪扫覆 + 双浪合幕：clip-path 正弦浪沿（#35 波浪型，圆环系已废弃） */
+.wv--ocean .wv-sea, .wv--tide .wv-sea{
+  position:absolute; inset:0; background:#0a0a0a; will-change:clip-path;
+}
+.wv--ocean .wv-foam, .wv--tide .wv-foam{
+  position:absolute; inset:0; background:var(--ac); opacity:.9;
+  filter:drop-shadow(0 0 10px var(--ac-glow)); will-change:clip-path;
+}
+/* 换片光斑（#41：揭幕瞬间一帧光痕） */
+.theater__leak{
+  position:absolute; inset:0; z-index:3; pointer-events:none; opacity:0;
+  background:linear-gradient(105deg, rgba(255,255,255,.85), rgba(255,213,200,.55) 42%, rgba(217,52,28,.3));
+  mix-blend-mode:screen;
+}
+.theater__viewer{ will-change:transform,filter; }
+
+/* 进度点 + 滚动提示 */
+.theater__progress{
+  position:absolute; right:clamp(14px,2.6vw,36px); top:50%; transform:translateY(-50%);
+  z-index:4; display:flex; flex-direction:column; gap:10px;
+}
+.theater__progress i{
+  width:6px; height:6px; border-radius:50%;
+  background:rgba(255,255,255,.18); transition:.35s var(--ease);
+}
+.theater__progress i.on{ background:var(--ac); transform:scale(1.45); box-shadow:0 0 10px var(--ac-glow); }
+.theater__cue{
+  position:absolute; left:50%; bottom:clamp(18px,4vh,38px); transform:translateX(-50%);
+  z-index:3; font-family:var(--disp); font-size:11px; letter-spacing:.28em;
+  color:var(--mut); opacity:0;
+}
+
+/* ============================================================
+   #35/#41 · 作品入场「波浪刷新显影」（main.js initWaveReveals）
+   作品不再下滑淡入——画框挂黑幕，入焦点时按四种波型显影：
+   blinds 百叶展开 / mosaic 瓦片溶出 / ocean 浪退显影 / split 中缝拉幕。
+   与剧场刷新波同一 DNA；文字仅 opacity 淡入，零位移。圆环系已废弃。
+   ============================================================ */
+.wvr{ position:absolute; inset:0; z-index:5; overflow:hidden; pointer-events:none; }
+.wvr::before{ content:""; position:absolute; inset:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,.05); z-index:1; }
+.wvr b{ background:#0b0b0b; }
+.wvr--blinds{ display:flex; flex-direction:column; }
+.wvr--blinds b{ flex:1; position:relative; will-change:transform; }
+.wvr--blinds b::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:1px;
+  background:linear-gradient(90deg, transparent 10%, var(--ac-glow), transparent 90%);
+  opacity:.45;
+}
+.wvr--mosaic{ display:grid; grid-template-rows:repeat(5,1fr); grid-template-columns:repeat(8,1fr); }
+.wvr--mosaic b{ will-change:transform; }
+.wvr--mosaic b.ac{ background:var(--ac); opacity:.85; }
+.wvr--ocean .sea{ position:absolute; inset:0; background:#0b0b0b; display:block; will-change:clip-path; }
+.wvr--ocean .foam{
+  position:absolute; inset:0; background:var(--ac); opacity:.85;
+  filter:drop-shadow(0 0 8px var(--ac-glow)); will-change:clip-path;
+}
+.wvr--split b{ position:absolute; top:0; bottom:0; width:51%; will-change:transform; }
+.wvr--split b.l{ left:0; }
+.wvr--split b.r{ right:0; }
+.wvr--split b.l::after, .wvr--split b.r::after{
+  content:""; position:absolute; top:0; bottom:0; width:2px;
+  background:linear-gradient(180deg, transparent 6%, var(--ac-glow), transparent 94%);
+  opacity:.7;
+}
+.wvr--split b.l::after{ right:0; }
+.wvr--split b.r::after{ left:0; }
+.gamecard{ position:relative; }
+.auto__media{ position:relative; }
+
+/* ============================================================
+   #32 · 文明诞生 · 灯火版图（genesis.js）
+   一颗火种 → 十个 → 五百个 → 落进中国全图（全部领土）连成网络。
+   暖白/朱砂灯火非科技蓝；sticky 自驱动。
+   旋钮：段高 420vh（叙事节奏）；点数/连线/阶段在 genesis.js 顶部。
+   ============================================================ */
+.genesis{ position:relative; height:420vh; }
+.genesis__pin{ position:sticky; top:0; height:100vh; overflow:hidden; }
+.genesis__cv{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.genesis__cap{
+  position:absolute; left:50%; bottom:clamp(40px,9vh,90px); transform:translate(-50%,10px);
+  font-size:clamp(1rem,2vw,1.3rem); font-weight:300; letter-spacing:.14em;
+  color:var(--ink-2); white-space:nowrap;
+  opacity:0; transition:opacity .8s var(--ease), transform .8s var(--ease);
+}
+.genesis__cap.on{ opacity:1; transform:translate(-50%,0); }
+.genesis__cap .g{ color:var(--ac); }
+/* —— #38 灯火落定后的回扣：社群名 + slogan 浮现在版图之上（与开幕首尾呼应） —— */
+.genesis__brand{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  text-align:center; opacity:0; pointer-events:none; z-index:3;
+  will-change:opacity,transform;
+}
+.genesis__brand-name{
+  font-family:var(--disp-cjk); font-weight:900; line-height:1.1;
+  font-size:clamp(3.2rem,9vw,7.2rem); letter-spacing:.02em; color:#fff;
+}
+.genesis__brand-line{
+  display:block; width:46px; height:2px; margin:clamp(14px,2.6vh,24px) auto;
+  background:var(--ac);
+}
+.genesis__brand-slogan{
+  font-size:clamp(.85rem,1.6vw,1.05rem); letter-spacing:.34em; padding-left:.34em;
+  color:var(--ink-2); white-space:nowrap;
+}
+
+/* ============================================================
+   #31 · 传送带过渡（网站 → 小程序）
+   两侧链条随滚动转动（scrub 跟手），下一章预告牌被「传送」上来。
+   旋钮：链条行程 RAIL_TRAVEL 在 theater.js；链节纹理在下方 gradient。
+   ============================================================ */
+/* —— #34 潮汐衔接：整幅波带随滚动扫过视口（无轨道无标题，纯波与光；
+      前浪+背浪差速视差=纵深，波峰朱砂泡沫线+受光渐变=立体水面）—— */
+/* #46 距离压缩：130vh→90vh（pin 同步 90vh，sticky 行程短了但浪的画面感靠
+   亮度/振幅补强——之前透明度太低，整段读作"空黑场"） */
+.belt{ position:relative; height:90vh; overflow:hidden; }
+.belt__pin{ position:sticky; top:0; height:90vh; }
+.belt__back,.belt__deep,.belt__foam{
+  position:absolute; inset:0; opacity:0; will-change:clip-path; pointer-events:none;
+  background-repeat:no-repeat;   /* 渐变由 JS 按波带定位（backgroundSize/Position 跟随波峰） */
+}
+.belt.on .belt__back,.belt.on .belt__deep,.belt.on .belt__foam{ opacity:1; }
+.belt__back{   /* 背浪：更暗更缓，纵深层 */
+  background-image:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.025) 35%, rgba(255,255,255,0) 75%);
+}
+.belt__deep{   /* 前浪主体：波峰受光暖白 → 没入页底色 */
+  background-image:linear-gradient(180deg, rgba(255,244,234,.17), rgba(255,255,255,.055) 38%, rgba(255,255,255,0) 85%);
+}
+.belt__foam{   /* 波峰泡沫线：朱砂，两端渐隐（横向渐变与 y 无关，免跟随） */
+  background-image:linear-gradient(90deg, rgba(217,52,28,0), rgba(217,52,28,.8) 16%, rgba(217,52,28,.8) 84%, rgba(217,52,28,0));
+  background-size:100% 100%;
+}
+
+.browser__live{ position:absolute; top:10px; right:10px; z-index:3; display:flex; align-items:center; gap:6px;
+  padding:5px 10px; border-radius:100px; background:rgba(0,0,0,.6); backdrop-filter:blur(6px);
+  font-family:var(--disp); font-size:10px; letter-spacing:.1em; color:var(--ac); }
+.browser__live::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--ac); box-shadow:0 0 8px var(--ac); animation:pulse 1.6s infinite; }
+
+.site__txt .n{ font-family:var(--disp); color:var(--ac); font-size:13px; letter-spacing:.2em; }
+.site__txt h3{ font-size:clamp(1.5rem,3.2vw,2.3rem); font-weight:600; margin:.3em 0 .5em; line-height:1.2; }
+.site__txt p{ color:var(--mut); font-size:1.02rem; max-width:34ch; }
+.visit{
+  display:inline-flex; align-items:center; gap:8px; margin-top:1.4em;
+  padding:11px 22px; border:1px solid var(--ac); border-radius:100px;
+  color:var(--ac); font-size:.92rem; letter-spacing:.05em;
+  transition:.35s var(--ease);
+}
+.visit:hover{ background:var(--ac); color:#000; box-shadow:0 0 30px var(--ac-glow); }
+.visit i{ transition:transform .35s var(--ease); }
+.visit:hover i{ transform:translateX(4px); }
+
+/* ============================================================
+   轮3 产品 —— 手机框卡片
+   ============================================================ */
+.products{
+  /* v14：两台手机(Web应用+小程序)并排一行；横屏游戏卡(网页端)独占一行 */
+  display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start;
+  gap:clamp(44px,9vh,110px) clamp(28px,6vw,90px);
+  max-width:1240px; margin:0 auto; padding:0 var(--pad) 18vh;
+}
+/* #30：手机框再小一档 + 42vh 上限锁高（9:17 → 机身约 79vh，加 meta 不超一屏） */
+.products > *{ width:min(clamp(200px,22vw,280px),42vh); order:1; }   /* 手机们 order:1 → 同行并排 */
+
+/* 横屏「游戏屏」卡片（16:9 网页游戏录屏，不裁画面）：独占一行居中 */
+.products .pwide{ order:2; flex:0 0 100%; width:auto; display:flex; flex-direction:column; align-items:center; }
+.products .pwide .gamecard,
+.products .pwide .product__meta{ width:clamp(340px,54vw,720px); max-width:100%; }
+.gamecard{
+  position:relative; border-radius:18px; overflow:hidden; aspect-ratio:16/9;
+  background:#161616; border:1px solid #262626; box-shadow:0 30px 70px rgba(0,0,0,.55);
+}
+.gamecard img,.gamecard video{ width:100%; height:100%; object-fit:cover; }
+.gamecard .ph{ min-height:100%; }
+.gamecard .ph__num{ font-size:6rem; }
+.phone{
+  position:relative; border-radius:30px; padding:10px; background:#161616;
+  border:1px solid #262626; box-shadow:0 30px 70px rgba(0,0,0,.55);
+}
+.phone__notch{ position:absolute; top:18px; left:50%; transform:translateX(-50%); width:40px; height:5px; border-radius:5px; background:#000; z-index:2; }
+.phone__screen{ position:relative; aspect-ratio:9/17; border-radius:22px; overflow:hidden; background:#0c0c0c; }
+.phone__screen img,.phone__screen video{ width:100%; height:100%; object-fit:cover; }
+.phone__screen .ph{ min-height:100%; }
+.product__meta{ padding:16px 4px 4px; text-align:center; }
+.product__meta .tag{ display:inline-block; font-family:var(--disp); font-size:10px; letter-spacing:.12em; color:var(--ac); border:1px solid var(--ac-dim); border-radius:100px; padding:3px 10px; margin-bottom:9px; }
+.product__meta b{ display:block; font-weight:600; font-size:1.05rem; }
+.product__meta span{ font-size:.84rem; color:var(--mut); }
+
+/* ============================================================
+   轮4 自动化 —— 宽卡片：序号 + 标题 + 描述
+   ============================================================ */
+.automation{
+  display:flex; flex-direction:column; gap:clamp(56px,13vh,170px);   /* 每屏聚焦一个，大行距 */
+  max-width:1100px; margin:0 auto; padding:0 var(--pad) 16vh;
+}
+.auto{
+  display:grid; grid-template-columns:0.85fr 1.4fr; gap:clamp(28px,5vw,68px); align-items:center;
+  padding:clamp(24px,3.2vw,44px); border-radius:18px;
+  background:linear-gradient(120deg,#131313,#0d0d0d);
+  border:1px solid var(--line);
+  transition:border-color .5s var(--ease), transform .5s var(--ease);
+}
+.auto:hover{ border-color:var(--ac-dim); transform:translateY(-3px); }
+/* 偶数卡片：大画面在左，文字在右（左右交替，更有节奏） */
+.auto:nth-child(even){ grid-template-columns:1.4fr 0.85fr; }
+.auto:nth-child(even) .auto__media{ order:-1; }
+.auto__n{ font-family:var(--disp); font-weight:700; font-size:clamp(2rem,4vw,3rem); color:var(--ac); line-height:1; opacity:.9; margin-bottom:.5em; }
+.auto__txt h3{ font-size:clamp(1.5rem,3vw,2.2rem); font-weight:600; margin-bottom:.5em; line-height:1.25; }
+.auto__txt p{ color:var(--mut); font-size:1.05rem; max-width:42ch; line-height:1.65; }
+/* 大画面：16:9，直观呈现录屏 */
+.auto__media{ width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#0c0c0c; border:1px solid #222; box-shadow:0 30px 70px rgba(0,0,0,.5); }
+.auto__media img,.auto__media video{ width:100%; height:100%; object-fit:cover; }
+.auto__media .ph{ min-height:100%; }
+.auto__media .ph__num{ font-size:6rem; }
+
+/* ============================================================
+   CTA
+   ============================================================ */
+.cta{
+  min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;
+  padding:16vh var(--pad); text-align:center;
+}
+.cta__list{ list-style:none; width:min(640px,90vw); }
+.cta__list li{ border-top:1px solid var(--line); }
+.cta__list li:last-child{ border-bottom:1px solid var(--line); }
+.cta__list a{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:clamp(22px,3.5vw,40px) 8px;
+  font-size:clamp(1.4rem,4vw,2.4rem); font-weight:500;
+  transition:.45s var(--ease);
+}
+.cta__list a:hover{ padding-left:26px; padding-right:0; color:var(--ac); }
+.cta__list a i{ font-family:var(--disp); color:var(--mut); transition:.45s var(--ease); }
+.cta__list a:hover i{ color:var(--ac); transform:translateX(8px); }
+/* —— CTA 展开面板（点击行手风琴，互斥展开；箭头转 90° 示意） —— */
+.cta__list a.cta__row{ cursor:pointer; }
+.cta__list li.open .cta__row{ color:var(--ac); }
+.cta__list li.open .cta__row i{ color:var(--ac); transform:rotate(90deg); }
+.cta__panel{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .6s var(--ease); }
+.cta__list li.open .cta__panel{ grid-template-rows:1fr; }
+.cta__panel-in{ overflow:hidden; min-height:0; }
+.cta__qr{
+  display:block; width:clamp(190px,26vw,250px); margin:10px auto 0;
+  border-radius:14px; border:1px solid var(--line);
+}
+.cta__wechat{ margin-top:8px; font-size:clamp(1.25rem,3.2vw,1.9rem); font-weight:500; }
+.cta__wechat b{ color:var(--ac); font-weight:700; cursor:pointer; }
+.cta__sub{ margin:14px 0 34px; font-size:12px; letter-spacing:.18em; color:var(--mut); }
+.cta__mark{ margin-top:7vh; font-family:var(--disp); font-size:12px; letter-spacing:.22em; color:var(--mut); text-transform:uppercase; }
+
+/* ============================================================
+   杂志级排版 · 超大数字 · 章节系统（视觉升级层）
+   ============================================================ */
+
+/* —— 章节巨型幽灵数字（大型排版 · 视差底层）—— */
+.chapter{ position:relative; overflow:hidden; }
+.chapter__no{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-family:var(--disp); font-weight:700; line-height:1; white-space:nowrap;
+  font-size:clamp(15rem,42vw,40rem); letter-spacing:-.03em;
+  color:transparent; -webkit-text-stroke:1.5px rgba(255,255,255,.055);
+  pointer-events:none; z-index:0; user-select:none;
+}
+.chapter .copy{ position:relative; z-index:1; }
+
+/* —— 杂志 kicker：英文行号 / 中文标签 + 分隔细线 —— */
+.kicker{
+  display:flex; flex-direction:column; align-items:center; gap:.85em;
+  margin-bottom:2.6em; text-transform:none;
+}
+.kicker__en{ font-family:var(--disp); font-weight:500; font-size:12px; letter-spacing:.46em; color:var(--ac); }
+.kicker__zh{
+  position:relative; font-size:12px; letter-spacing:.55em; color:var(--mut); padding-top:.85em;
+}
+.kicker__zh::before{
+  content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:26px; height:1px; background:var(--ac); opacity:.5;
+}
+
+/* —— 数据刻度带（社群成长可视化 · 超大数字计数）—— */
+.scale{ min-height:100vh; }
+.scale__cap{
+  font-family:var(--disp); font-size:12px; letter-spacing:.42em; color:var(--mut);
+  text-transform:uppercase; margin-bottom:clamp(3rem,7vh,5.5rem); text-align:center;
+}
+.scale__cap b{ color:var(--ac); font-weight:500; }
+.scale__grid{
+  display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start;
+  gap:clamp(30px,5.5vw,84px);
+}
+.stat{ display:flex; flex-direction:column; align-items:center; }
+.stat__v{
+  display:flex; align-items:flex-start; justify-content:center;
+  font-family:var(--disp); font-weight:700; line-height:.86; letter-spacing:-.03em;
+  font-size:clamp(3.4rem,7.5vw,6rem); color:var(--ac);
+  font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
+}
+.stat__sym{ font-size:.92em; line-height:.7; margin-top:.13em; transform:translateY(-.068em); }   /* ∞ 放大；transform 把 ink 视觉中心精确对齐数字（实测未加时 ∞ 中心偏低 6px≈.068em，canvas 量 ink + 基线标记算得）*/
+.stat__plus{ font-size:.5em; margin-top:.12em; margin-left:.03em; font-weight:600; }
+
+/* 社群成长：500 →(30天) 3000 —— #scale 主视觉 */
+.grow{
+  display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
+  gap:clamp(20px,4.5vw,70px);
+  margin-bottom:clamp(3.2rem,8vh,6rem);
+}
+.grow__node{ display:flex; flex-direction:column; align-items:center; }
+.grow__num{
+  display:flex; align-items:flex-start;
+  font-family:var(--disp); font-weight:700; line-height:.88; letter-spacing:-.02em;
+  font-size:clamp(3.8rem,9.5vw,7.5rem);
+  font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
+  color:var(--ink-2);                       /* 初始：暖灰，humble 起点 */
+}
+.grow__node--now .grow__num{ color:var(--ac-2); }   /* 如今 3000人：赤焰红点睛——成长的力量高潮 */
+.grow__unit{ font-size:.3em; margin-top:.7em; margin-left:.14em; font-weight:600; letter-spacing:.02em; }
+.grow__lab{
+  margin-top:.9em; font-family:var(--disp); font-size:11px; letter-spacing:.28em;
+  color:var(--mut); text-transform:uppercase;
+}
+.grow__node--now .grow__lab{ color:var(--ac-2); }   /* 「如今」标签同步赤焰红 */
+.grow__mid{ display:flex; flex-direction:column; align-items:center; gap:.55em; padding-bottom:1.6em; }
+.grow__t{ font-size:clamp(.82rem,1.7vw,1.05rem); color:var(--ink-2); letter-spacing:.1em; white-space:nowrap; }
+.grow__arrow{ font-family:var(--disp); font-weight:300; line-height:1; color:var(--ac); font-size:clamp(2.2rem,5.5vw,3.6rem); }
+.stat__zh{ margin-top:.55em; font-size:clamp(1rem,2.3vw,1.45rem); font-weight:500; color:var(--ink); letter-spacing:.08em; }
+.stat__en{ margin-top:.7em; font-family:var(--disp); font-size:11px; letter-spacing:.32em; color:var(--mut); text-transform:uppercase; }
+
+@media (max-width:880px){
+  .scale__grid{ gap:clamp(30px,8vw,60px); }
+  .stat__v{ font-size:clamp(3.4rem,16vw,5.6rem); }
+  .chapter__no{ -webkit-text-stroke-width:1px; }
+  /* 成长：竖向堆叠，箭头转向下 */
+  .grow{ flex-direction:column; gap:clamp(14px,4vw,26px); }
+  .grow__num{ font-size:clamp(4rem,20vw,6.4rem); }
+  .grow__mid{ flex-direction:row-reverse; gap:.6em; padding-bottom:0; align-items:center; }
+  .grow__arrow{ transform:rotate(90deg); }
+}
+
+/* ============================================================
+   动效初始态（GSAP 接管；无 JS 时降级为可见）
+   ============================================================ */
+.js .reveal,.js .reveal-but{ opacity:0; }
+.js .surge span,.js .surge__tail,.js .hope{ opacity:0; }
+
+/* ============================================================
+   特殊文字特效（v13 · 参考站 brutalist 基因）
+   ============================================================ */
+/* 逐字入场（绝望段大句拆字） */
+.ch{ display:inline-block; will-change:transform,opacity; }
+
+/* #42 中文断行（词级）：拆字特效的三层壳——
+   chcl 子句(整体换行优先，宽过整行才在内部词边界折) > chgrp 词组(永不拆) > ch 字
+   （裸 inline-block 字会破坏中文禁则：标点跑行首、「写真」被拆成「写/真」） */
+.chcl{ display:inline-block; white-space:normal; }
+.chgrp{ display:inline-block; white-space:nowrap; }
+
+/* #42 普通段落词级断行：keep-all 禁词内断 + <wbr> 给词边界、break-word 兜底防溢出
+   （不能用 anywhere：text-wrap:balance 会利用 anywhere 的任意断点把「小红书」拆开） */
+.cjk{ word-break:keep-all; overflow-wrap:break-word; }
+
+/* #42 作品文字：标题两行等长（防「容」孤字）；说明行只防短尾行——
+   balance 会借 break-word 的紧急断点把 NBSP 粘连的「小红书」拆开，说明行不能用 */
+.auto__txt h3{ text-wrap:balance; }
+.auto__txt p, .cap span, .product__meta span, .site__txt p{ text-wrap:pretty; }
+
+/* 「不再公布」封禁条：朱砂实条扫过遮蔽文字 → 坍缩成下划线（审查感→划重点） */
+.redact{ position:relative; display:inline-block; }
+.redact::after{
+  content:""; position:absolute; left:-.1em; right:-.1em; top:.04em; bottom:0;
+  background:var(--ac); transform:scaleX(0); transform-origin:left center; z-index:1;
+}
+.redact.on::after{ animation:redactSweep 1.6s cubic-bezier(.72,0,.18,1) forwards; }
+@keyframes redactSweep{
+  0%{ transform:scaleX(0); top:.04em; bottom:0; }
+  40%,58%{ transform:scaleX(1); top:.04em; bottom:0; }   /* 全遮蔽稍作停留＝"被封禁" */
+  100%{ transform:scaleX(1); top:calc(100% - .06em); bottom:-.12em; }   /* 坍缩成底部红线 */
+}
+
+/* ---- 幕间分界：细线从中心向两侧划出 + 中心菱形（按幕变体），克制的换幕呼吸 ----
+   借鉴参考站的编辑式细线分隔，但叙事化：无标签不剧透，菱形形态暗示幕的气质 */
+.divider{
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  width:min(440px,62vw); margin:0 auto; padding:clamp(34px,7vh,70px) 0;
+}
+.divider i{
+  flex:1; height:1px; transform:scaleX(0);
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.22));
+  transition:transform 1.1s var(--ease) .15s;
+}
+.divider i:first-child{ transform-origin:right center; }
+.divider i:last-child{ transform-origin:left center; background:linear-gradient(90deg, rgba(255,255,255,.22), transparent); }
+.divider b{
+  width:7px; height:7px; flex:0 0 auto;
+  transform:rotate(45deg) scale(0); opacity:0;
+  transition:transform .8s var(--ease), opacity .6s var(--ease);
+}
+.divider.on i{ transform:scaleX(1); }
+.divider.on b{ transform:rotate(45deg) scale(1); opacity:1; }
+.divider--cold b{ background:transparent; border:1px solid rgba(255,255,255,.35); }   /* 现实幕：冷·空心 */
+.divider--rise b{ background:var(--ac); }                                              /* 作品幕：朱砂·实心 */
+.divider--hope b{ background:var(--ac); box-shadow:0 0 14px var(--ac-glow); }          /* 希望幕：朱砂·发光 */
+
+/* 开屏未结束前锁滚动（reel.js 控制加/移除） */
+html.lock-scroll body{ overflow:hidden; }
+
+/* 章节标题「打字机」的长条光标（朱砂发光竖条，随打字逐字右移） */
+.typebar{
+  display:inline-block; width:.13em; height:.92em; margin-left:.07em;
+  background:var(--ac); border-radius:.08em; vertical-align:-.06em;
+  box-shadow:0 0 12px var(--ac-glow); opacity:0;
+}
+
+/* 关键词下划线扫入（如泉涌般出现） */
+.uline{ position:relative; }
+.uline::after{
+  content:""; position:absolute; left:0; right:0; bottom:-.14em; height:.075em;
+  background:var(--ac); transform:scaleX(0); transform-origin:left center;
+  transition:transform 1.05s var(--ease) .1s;
+}
+.uline.on::after{ transform:scaleX(1); }
+
+/* 创作流送带：brutalist 巨字走马灯（描边幽灵字 + 朱砂实色点缀，参考站 v2drag） */
+/* #48b 走马灯重调：描边细柔暖化 + 两端渐隐融入画面 + 微倾斜动感 + 朱砂词呼吸辉光 */
+.stream{
+  position:relative; padding:clamp(44px,10vh,110px) 0; overflow:hidden;
+  /* 微倾斜（流动感，不水平躺平）+ scale 补四角裁切；rotate 不能放 track——
+     会和 streamMove 的 transform 关键帧打架（百分比无法进矩阵插值） */
+  transform:rotate(-1.4deg) scale(1.03);
+  /* 两端渐隐：字从画外"流入流出"，不再生硬撞边 */
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+          mask-image:linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+}
+.stream__track{ display:flex; width:max-content; animation:streamMove 38s linear infinite; will-change:transform; }
+.stream__set{
+  display:flex; align-items:center; white-space:nowrap;
+  font-family:var(--disp-cjk); font-weight:900; line-height:1.1;
+  font-size:clamp(3rem,9vw,7.5rem); letter-spacing:.03em;
+  /* 细暖描边（1.5px 白→0.8px 暖白）：轻、透气，与全站暖白体系同色族 */
+  color:transparent; -webkit-text-stroke:.8px rgba(255,243,228,.27);
+}
+.stream__set b{
+  color:var(--ac); -webkit-text-stroke:0;
+  animation:streamGlow 4.2s ease-in-out infinite alternate;   /* 点睛词缓慢呼吸 */
+}
+.stream__set i{ font-style:normal; color:var(--ac); -webkit-text-stroke:0; font-size:.32em; margin:0 .9em; transform:translateY(-.1em); }
+@keyframes streamMove{ to{ transform:translateX(-50%); } }
+@keyframes streamGlow{
+  from{ text-shadow:0 0 14px rgba(217,52,28,.18); }
+  to  { text-shadow:0 0 30px rgba(217,52,28,.45); }
+}
+@media (prefers-reduced-motion:reduce){
+  .stream__track{ animation:none; }
+  .redact.on::after{ animation:none; transform:scaleX(1); top:calc(100% - .06em); bottom:-.12em; }
+}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width:880px){
+  .bento{ grid-template-columns:1fr; }
+  .site,.site:nth-child(even){ grid-template-columns:1fr; gap:26px; }
+  .site:nth-child(even) .browser{ order:0; }
+  .site:nth-child(even) .site__txt{ order:0; }
+  .site__txt p{ max-width:none; }
+  .products > *{ width:min(40vw,360px); }   /* 移动端两台手机仍并排（窄屏自动换行） */
+  .products .pwide .gamecard,
+  .products .pwide .product__meta{ width:min(94vw,560px); }
+  .auto,.auto:nth-child(even){ grid-template-columns:1fr; gap:20px; }
+  .auto:nth-child(even) .auto__media{ order:0; }
+  .stage{ padding:12vh 22px; }
+  .stage--tall{ min-height:110vh; }
+}
+@media (max-width:480px){
+  .brand__name{ font-size:10px; }
+  .sound__hint{ display:none; }
+}
+
+/* ---- 减少动态偏好 ---- */
+@media (prefers-reduced-motion:reduce){
+  .grain{ animation:none; }
+  *{ scroll-behavior:auto!important; }
+}
+
+/* ============================================================
+   终幕作品旋涡（#22 电影帷幕）——卡片由 finale.js 注入 #ending2
+   开头黑白静止的作品墙，在结尾被点亮、环绕「无限希望」旋转（首尾呼应）。
+   旋钮：卡片亮度 brightness(.5)、尺寸 clamp、iris 暗角强度见 ::after。
+   ============================================================ */
+#ending2{ position:relative; overflow:hidden; }
+#ending2 .copy{ position:relative; z-index:2; }
+.vortex{ position:absolute; inset:0; z-index:0; pointer-events:none; opacity:0; }
+/* #40 星系粒子画布：卡片之下铺满整层（additive 发光在 JS 里做） */
+.vortex__stars{ position:absolute; inset:0; width:100%; height:100%; }
+.vortex__card{
+  position:absolute; left:50%; top:50%;
+  width:clamp(96px,11.5vw,185px); aspect-ratio:16/10;
+  border-radius:10px; background-size:cover; background-position:center;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 14px 44px rgba(0,0,0,.5);
+  filter:grayscale(.35) brightness(.5) saturate(.85);   /* 统一压暗降饱和：文字是唯一主角 */
+  will-change:transform;
+}
+.vortex::after{   /* 电影 iris：中心净空加深 + 外圈暗角，罩出帷幕纵深 */
+  content:""; position:absolute; inset:0; z-index:2;
+  background:radial-gradient(58% 58% at 50% 50%,
+    rgba(10,10,10,.78) 0%, rgba(10,10,10,.18) 34%,
+    rgba(10,10,10,0) 55%, rgba(10,10,10,.6) 100%);
+}
