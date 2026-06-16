@@ -130,7 +130,7 @@
     o.textBaseline = "middle";
     if ("letterSpacing" in o) { try { o.letterSpacing = LSP + "px"; } catch (e) {} }
     o.font = FONT;
-    o.fillText("树成林", cx, cy);
+    o.fillText("星野", cx, cy);
 
     var data = o.getImageData(0, 0, W, H).data;
     var step = Math.max(3, Math.round(3.6 * DPR));   // 采样更密 → 凝结后更接近实心字
@@ -407,7 +407,7 @@
     ctx.font = FONT;
     ctx.globalAlpha = a; ctx.fillStyle = "#fff";
     if (glow > 0.01) { ctx.shadowColor = "rgba(255,255,255,.55)"; ctx.shadowBlur = glow; }
-    ctx.fillText("树成林", 0, 0);
+    ctx.fillText("星野", 0, 0);
     ctx.restore();
   }
   // 最终定格：清掉粒子/特效残留，画上纯白实心「树成林」（此时 heat=0/scl=1 → 无辉光无抖动）
