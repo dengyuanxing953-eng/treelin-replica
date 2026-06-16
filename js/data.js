@@ -16,7 +16,7 @@
 /* 媒体基址：阿里云 OSS 杭州直链（大陆访问快一个量级）。
    仓库里同路径文件仍在（Vercel 也有一份）——想回退只需把 B 改成 ""。
    素材更新后同步：~/bin/ossutil cp -r works oss://treelin-hope/works -f */
-var B = "assets/oss/";
+var B = "https://xingye2.oss-cn-hangzhou.aliyuncs.com/assets/oss/";
 window.MEDIA_BASE = B;
 
 window.WORKS = {
